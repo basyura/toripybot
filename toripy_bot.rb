@@ -28,7 +28,7 @@ class ToripyBot
             date = item.date.strftime("%Y%m%d%H%M")
             if date > touch
               status = rss.channel.title + " : " + item.title + " - " + item.link
-              Twitter::Base.new("toripy" , "pinkspider23").update(status)
+              Twitter::Base.new("toripy" , "xxxxxxxxxxxx").update(status)
               puts status
               latest = date if date > latest
             end
