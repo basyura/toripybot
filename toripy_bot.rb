@@ -6,7 +6,7 @@ require 'sqlite3'
 require 'time'
 
 class ToripyBot
-  def initialie
+  def initialize
     create_db unless File.exist?("toripy.db")
   end
   def crawl
