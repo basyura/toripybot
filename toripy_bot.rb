@@ -27,7 +27,7 @@ class ToripyBot
           udate = Time.parse(record[3]).strftime("%Y%m%d%H%M")
           if ldate > udate
             status = rss.channel.title + " : " + item.title + " - " + item.link
-            #Twitter::Base.new("toripy" , "************").update(status)
+            get_twitter.update(status)
             puts status
             count = record[4].to_i + 1
             twit_date = Time.now.to_s
@@ -42,6 +42,40 @@ class ToripyBot
     puts "******************************************************************"
     puts "*                        crawl   end                             *"
     puts "******************************************************************"
+  end
+  def follow
+    t = get_twitter
+    friends = []
+    for i in 1...99
+      f = t.friends(:page => i)
+      break if f.length == 0
+      f.each{|u| friends.push u.screen_name}
+    end
+    followers = []
+    for i in 1...99
+      f = t.followers(:page => i)
+      break if f.length == 0
+      f.each{|u| followers.push u.screen_name}
+    end
+    puts friends.length
+    puts followers.length
+    followers.each{|u|
+      next if friends.include? u
+      print "follow #{u}"
+      begin
+        t.friendship_create(u)
+        puts " -> OK"
+      rescue
+        print " -> error"
+        begin
+          t.friendship_destroy(u)
+          print " -> remove"
+        rescue
+        end
+        puts ""
+      end
+    }
+
   end
   private
   def create_db
@@ -81,8 +115,13 @@ class ToripyBot
   def get_db
     SQLite3::Database.new("toripy.db")
   end
+  def get_twitter
+    httpauth = Twitter::HTTPAuth.new('toripy', '**********')
+    Twitter::Base.new(httpauth)
+  end
 end
 
 ToripyBot.new.crawl
+ToripyBot.new.follow
 
 
