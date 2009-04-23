@@ -8,8 +8,9 @@ require 'time'
 require 'yaml'
 
 class ToripyBot
-  def initialize
-    yaml = YAML.load_file("toripy.yaml")
+  def initialize(file=nil)
+    file = "toripy.yaml" unless file
+    yaml = YAML.load_file(file)
     @id = yaml["id"]
     @password = yaml["password"]
   end
@@ -103,24 +104,28 @@ class ToripyBot
     followed = []
     list = [
       "http://search.twitter.com/search.atom?q=%E9%B3%A5%E5%8F%96", #鳥取
-      "http://search.twitter.com/search?q=%E9%B3%A5%E5%8F%96%E7%A0%82%E4%B8%98", #鳥取砂丘
-      "http://search.twitter.com/search?q=%E9%B3%A5%E5%A4%A7", #鳥大
-      "http://search.twitter.com/search?q=%E5%B3%B6%E6%A0%B9", #島根
-      "http://search.twitter.com/search?q=%E5%A4%A7%E5%B1%B1", #大山
-      "http://search.twitter.com/search?q=%E7%B1%B3%E5%AD%90", #米子
-      "http://search.twitter.com/search?q=%E5%9B%A0%E5%B9%A1", #因幡
+      "http://search.twitter.com/search.atom?q=%E9%B3%A5%E5%8F%96%E7%A0%82%E4%B8%98", #鳥取砂丘
+      "http://search.twitter.com/search.atom?q=%E9%B3%A5%E5%A4%A7", #鳥大
+      "http://search.twitter.com/search.atom?q=%E5%B3%B6%E6%A0%B9", #島根
+      "http://search.twitter.com/search.atom?q=%E5%A4%A7%E5%B1%B1", #大山
+      "http://search.twitter.com/search.atom?q=%E7%B1%B3%E5%AD%90", #米子
+      "http://search.twitter.com/search.atom?q=%E5%9B%A0%E5%B9%A1", #因幡
+      "http://search.twitter.com/search.atom?q=%E9%B3%A5%E5%8F%96%E7%A9%BA%E6%B8%AF",#鳥取空港
     ].each{|url|
+      puts "search #{url}"
       atom.get_feed(url).entries.each{|e|
-        if e.author.uri =~ /http(.*?)twitter.com(.*)/
-          name = $2.slice(1,$2.length)
-          next if followed.include? name
-          print "follow #{name} ... "
-            get_twitter.friendship_create(name)
-            puts "OK"
-            puts e
-            puts "NG"
-          followed.push name
-        end
+          if e.author.uri =~ /http(.*?)twitter.com(.*)/
+            name = $2.slice(1,$2.length)
+            next if followed.include? name
+            print "follow #{name} ... "
+            begin
+              get_twitter.friendship_create(name)
+              puts "OK"
+            rescue => e
+              puts "NG"
+            end
+            followed.push name
+          end
       }
     }
   end
