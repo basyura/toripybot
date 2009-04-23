@@ -165,6 +165,7 @@ end
 if ARGV.length == 0
   ToripyBot.new.crawl
   ToripyBot.new.follow
+  ToripyBot.new.search_follow
 elsif ARGV.length == 2 && ARGV[0] == "add_rss"
   ToripyBot.new.add_rss ARGV[1]
 elsif ARGV.length == 1 && ARGV[0] == "follow"
