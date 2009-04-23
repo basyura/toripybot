@@ -6,17 +6,17 @@ require 'sqlite3'
 require 'time'
 
 class ToripyBot
+  def initialie
+    create_db unless File.exist?("toripy.db")
+  end
   def crawl
     puts "******************************************************************"
     puts "*                        crawl   start                           *"
     puts "******************************************************************"
     puts "start time - " + Time.now.strftime("%Y/%m/%d %H:%M")
 
-    create_db unless File.exist?("toripy.db")
-
     select_rss.each {|record|
       url = record[1]
-      next if url == "" || url =~ /^#/
       p record
       count = record[4]
       twit_date = record[3]
@@ -27,6 +27,7 @@ class ToripyBot
           udate = Time.parse(record[3]).strftime("%Y%m%d%H%M")
           if ldate > udate
             status = rss.channel.title + " : " + item.title + " - " + item.link
+            #Twitter::Base.new("toripy" , "************").update(status)
             puts status
             count = record[4].to_i + 1
             twit_date = Time.now.to_s
@@ -44,7 +45,7 @@ class ToripyBot
   end
   private
   def create_db
-    db = SQLite3::Database.new("toripy.db")
+    db = get_db
     db.transaction do
       db.execute("create table RSS(id Integer primary key autoincrement, url text , active Integer)")
       db.execute("create table ITEM(id Integer primary key , twit_date date , twit_count Integer , update_date date)")
@@ -61,13 +62,13 @@ class ToripyBot
     end
   end
   def select_rss
-    db = SQLite3::Database.new("toripy.db")
     sql =<<-EOF
         select RSS.id , RSS.url , RSS.active , 
                 ITEM.twit_date , ITEM.twit_count , ITEM.update_date
           from RSS inner join ITEM ON RSS.id = ITEM.id
+          order by RSS.id
     EOF
-    db.execute(sql)
+    get_db.execute(sql)
   end
   def update_item(id , twit_date , count)
     sql =<<-EOF
@@ -75,7 +76,10 @@ class ToripyBot
         set twit_date='#{twit_date}' , twit_count=#{count} , update_date='#{Time.now.to_s}'
         where id=#{id}
     EOF
-    SQLite3::Database.new("toripy.db").execute(sql);
+    get_db.execute(sql);
+  end
+  def get_db
+    SQLite3::Database.new("toripy.db")
   end
 end
 
