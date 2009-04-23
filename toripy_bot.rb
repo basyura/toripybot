@@ -162,11 +162,7 @@ class ToripyBot
   end
 end
 
-if ARGV.length == 0
-  ToripyBot.new.crawl
-  ToripyBot.new.follow
-  ToripyBot.new.search_follow
-elsif ARGV.length == 2 && ARGV[0] == "add_rss"
+if ARGV.length == 2 && ARGV[0] == "add_rss"
   ToripyBot.new.add_rss ARGV[1]
 elsif ARGV.length == 1 && ARGV[0] == "follow"
   ToripyBot.new.follow
@@ -174,6 +170,16 @@ elsif ARGV.length == 1 && ARGV[0] == "setup"
   ToripyBot.new.setup
 elsif ARGV.length == 1 && ARGV[0] == "search_follow"
   ToripyBot.new.search_follow
+elsif ARGV.length == 1
+  bot = ToripyBot.new(ARGV[0])
+  bot.crawl
+  bot.follow
+  bot.search_follow
+else 
+  bot = ToripyBot.new
+  bot.crawl
+  bot.follow
+  bot.search_follow
 end
 
 
