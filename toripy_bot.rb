@@ -6,6 +6,7 @@ require 'atomutil'
 require 'sqlite3'
 require 'time'
 require 'yaml'
+require 'optparse'
 
 class ToripyBot
   def initialize(file=nil)
@@ -32,7 +33,7 @@ class ToripyBot
           udate = Time.parse(record[3]).strftime("%Y%m%d%H%M")
           if ldate > udate
             status = rss.channel.title + " : " + item.title + " - " + item.link
-            get_twitter.update(status)
+#            twitter.update(status)
             puts status
             count = record[4].to_i + 1
             twit_date = Time.now.to_s
@@ -49,7 +50,7 @@ class ToripyBot
     puts "******************************************************************"
   end
   def follow
-    t = get_twitter
+    t = twitter
     friends = []
     for i in 1...99
       f = t.friends(:page => i)
@@ -72,11 +73,7 @@ class ToripyBot
         puts " -> OK"
       rescue
         print " -> error"
-        begin
-          t.friendship_destroy(u)
-          print " -> remove"
-        rescue
-        end
+        t.friendship_destroy(u) rescue print " -> remove"
         puts ""
       end
     }
@@ -84,7 +81,6 @@ class ToripyBot
   def add_rss(url)
     url.chomp! unless url.frozen?
     return if url =~ /^¥#/
-    db = get_db
     count = db.execute("select count(*) from RSS where url='#{url}'").to_s
     if count != "0"
       puts "already exist"
@@ -119,7 +115,7 @@ class ToripyBot
             next if followed.include? name
             print "follow #{name} ... "
             begin
-              get_twitter.friendship_create(name)
+              twitter.friendship_create(name)
               puts "OK"
             rescue => e
               puts "NG"
@@ -131,7 +127,6 @@ class ToripyBot
   end
   private
   def create_db
-    db = get_db
     db.execute("create table RSS(id Integer primary key autoincrement, url text , active Integer)")
     db.execute("create table ITEM(id Integer primary key , twit_date date , twit_count Integer , update_date date)")
     open("list.txt").read.split(/^/).each {|url| add_rss(url)}
@@ -143,7 +138,7 @@ class ToripyBot
           from RSS inner join ITEM ON RSS.id = ITEM.id
           order by RSS.id
     EOF
-    get_db.execute(sql)
+    db.execute(sql)
   end
   def update_item(id , twit_date , count)
     sql =<<-EOF
@@ -151,35 +146,38 @@ class ToripyBot
         set twit_date='#{twit_date}' , twit_count=#{count} , update_date='#{Time.now.to_s}'
         where id=#{id}
     EOF
-    get_db.execute(sql);
+    db.execute(sql);
   end
-  def get_db
-    SQLite3::Database.new("toripy.db")
+  def db
+    return @tdb if @tdb
+    @tdb = SQLite3::Database.new("toripy.db")
   end
-  def get_twitter
-    httpauth = Twitter::HTTPAuth.new(@id, @password)
-    Twitter::Base.new(httpauth)
+  def twitter
+    return @tclient if @tclient
+    @tclient = Twitter::Base.new(Twitter::HTTPAuth.new(@id, @password))
   end
 end
 
-if ARGV.length == 2 && ARGV[0] == "add_rss"
-  ToripyBot.new.add_rss ARGV[1]
-elsif ARGV.length == 1 && ARGV[0] == "follow"
-  ToripyBot.new.follow
-elsif ARGV.length == 1 && ARGV[0] == "setup"
-  ToripyBot.new.setup
-elsif ARGV.length == 1 && ARGV[0] == "search_follow"
-  ToripyBot.new.search_follow
-elsif ARGV.length == 1
-  bot = ToripyBot.new(ARGV[0])
-  bot.crawl
+PConf = Hash.new
+opts = OptionParser.new
+opts.on("--yaml v"){|v| PConf[:yaml] = v }
+opts.on("--add_rss v"){|v| PConf[:add_rss] = v }
+opts.on("--follow"){|v| PConf[:follow] = true }
+opts.on("--setup"){|v| PConf[:setup] = true }
+opts.on("--search_follow"){|v| PConf[:search_follow] = true}
+opts.parse!(ARGV)  
+
+bot = ToripyBot.new(PConf[:yaml])
+if PConf[:add_rss]
+  bot.add_rss PConf[:add_rss]
+elsif PConf[:follow]
   bot.follow
+elsif PConf[:setup]
+  bot.setup
+elsif PConf[:search_follow]
   bot.search_follow
-else 
-  bot = ToripyBot.new
-  bot.crawl
-  bot.follow
-  bot.search_follow
+else
+  bot.crawl rescue false
+  bot.follow rescue false
+  bot.search_follow rescue false
 end
-
-
