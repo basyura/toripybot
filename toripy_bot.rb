@@ -33,7 +33,7 @@ class ToripyBot
           udate = Time.parse(record[3]).strftime("%Y%m%d%H%M")
           if ldate > udate
             status = rss.channel.title + " : " + item.title + " - " + item.link
-#            twitter.update(status)
+            twitter.update(status)
             puts status
             count = record[4].to_i + 1
             twit_date = Time.now.to_s
