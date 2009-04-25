@@ -12,8 +12,9 @@ class ToripyBot
   def initialize(file=nil)
     file = "toripy.yaml" unless file
     yaml = YAML.load_file(file)
-    @id = yaml["id"]
+    @id       = yaml["id"]
     @password = yaml["password"]
+    @dbfile   = yaml["dbfile"]
   end
   def crawl
     puts "******************************************************************"
@@ -125,6 +126,7 @@ class ToripyBot
       }
     }
   end
+
   private
   def create_db
     db.execute("create table RSS(id Integer primary key autoincrement, url text , active Integer)")
@@ -150,7 +152,7 @@ class ToripyBot
   end
   def db
     return @tdb if @tdb
-    @tdb = SQLite3::Database.new("toripy.db")
+    @tdb = SQLite3::Database.new(@dbfile)
   end
   def twitter
     return @tclient if @tclient
