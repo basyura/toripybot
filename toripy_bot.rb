@@ -7,6 +7,7 @@ require 'sqlite3'
 require 'time'
 require 'yaml'
 require 'optparse'
+require 'bitly4r'
 
 class ToripyBot
   def initialize(file=nil)
@@ -15,6 +16,8 @@ class ToripyBot
     @id       = yaml["id"]
     @password = yaml["password"]
     @dbfile   = yaml["dbfile"]
+    @bitly_login   = yaml["bitly_login"]
+    @bitly_api_key = yaml["bitly_api_key"]
   end
   def crawl
     puts "******************************************************************"
@@ -33,7 +36,9 @@ class ToripyBot
           ldate = item.date.strftime("%Y%m%d%H%M")
           udate = Time.parse(record[3]).strftime("%Y%m%d%H%M")
           if ldate > udate
-            status = rss.channel.title + " : " + item.title + " - " + item.link
+            bitly = Bitly4R::Client.new(:login => @bitly_login, :api_key => @bitly_api_key)
+            link = bitly.shorten(item.link)
+            status = rss.channel.title + " : " + item.title + " - " + link
             twitter.update(status)
             puts status
             count = record[4].to_i + 1
