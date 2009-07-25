@@ -147,6 +147,7 @@ class ToripyBot
         select RSS.id , RSS.url , RSS.active , 
                 ITEM.twit_date , ITEM.twit_count , ITEM.update_date
           from RSS inner join ITEM ON RSS.id = ITEM.id
+          where RSS.active = 1
           order by RSS.id
     EOF
     db.execute(sql)
