@@ -36,8 +36,12 @@ class ToripyBot
           ldate = item.date.strftime("%Y%m%d%H%M")
           udate = Time.parse(record[3]).strftime("%Y%m%d%H%M")
           if ldate > udate
-            bitly = Bitly4R::Client.new(:login => @bitly_login, :api_key => @bitly_api_key)
-            link = bitly.shorten(item.link)
+            link = item.link
+            begin
+              bitly = Bitly4R::Client.new(:login => @bitly_login, :api_key => @bitly_api_key)
+              link = bitly.shorten(item.link)
+            rescue Bitly4R::Error => e
+            end
             status = rss.channel.title + " : " + item.title + " - " + link
             twitter.update(status)
             puts status
